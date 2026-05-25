@@ -1,582 +1,930 @@
 """
-Generador de PowerPoint con el estilo visual del Avance 01 de GymMax:
-- Fondo negro (#1a1a1a)
-- Títulos beige italic bold (#d4a574)
-- Texto blanco
-- Decoraciones: círculos beige en esquinas, marco redondeado en portada
-- Tipografía Calibri / sans serif
-
-Ejecutar: python generar_ppt_gymmax.py
+Generador de PowerPoint del Avance 02 de GymMax.
+Imita fielmente el estilo visual del PPT del Avance 01:
+- Fondo negro
+- Color beige/tan (#d4a574) para títulos y acentos
+- Marco redondeado beige en portada
+- Títulos GRANDES en MAYÚSCULAS, italic, bold
+- Decoración: 1 círculo arriba-izq + 3 círculos + flecha abajo-der
+- Texto en italic con color claro
+- Fuente Montserrat (con fallback Calibri)
 """
 
 import os
 from pptx import Presentation
-from pptx.util import Inches, Pt, Emu
+from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
 
+# ========= CONFIG =========
 BASE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(BASE, "GymMax_Avance02.pptx")
 
 # Paleta del Avance 01
-BG_DARK   = RGBColor(0x1a, 0x1a, 0x1a)   # fondo casi negro
-BEIGE     = RGBColor(0xd4, 0xa5, 0x74)   # beige cálido principal
-BEIGE_L   = RGBColor(0xe8, 0xc8, 0x96)   # beige claro
-WHITE     = RGBColor(0xff, 0xff, 0xff)
-GRAY      = RGBColor(0xcc, 0xcc, 0xcc)
-RED_UTP   = RGBColor(0xe6, 0x1c, 0x1c)
+BLACK = RGBColor(0x0a, 0x0a, 0x0a)
+TAN = RGBColor(0xd4, 0xa5, 0x74)
+TAN_BRIGHT = RGBColor(0xe8, 0xc4, 0x95)
+WHITE = RGBColor(0xff, 0xff, 0xff)
+WHITE_DIM = RGBColor(0xe0, 0xe0, 0xe0)
+GRAY = RGBColor(0x9a, 0x9a, 0x9a)
 
-FONT_TITLE = "Calibri"
-FONT_BODY  = "Calibri"
+TITLE_FONT = "Montserrat"
+BODY_FONT = "Calibri"
 
-
-# =========================================================
-#                      HELPERS DE ESTILO
-# =========================================================
-
-def set_bg(slide, color=BG_DARK):
-    """Pinta el fondo de un slide."""
-    bg = slide.background
-    bg.fill.solid()
-    bg.fill.fore_color.rgb = color
+# Tamaño widescreen 16:9
+SLIDE_W = 13.333
+SLIDE_H = 7.5
 
 
-def add_dot(slide, x, y, size=0.3, color=BEIGE):
-    """Pequeño círculo decorativo."""
-    s = slide.shapes.add_shape(MSO_SHAPE.OVAL,
-        Inches(x), Inches(y), Inches(size), Inches(size))
-    s.fill.solid()
-    s.fill.fore_color.rgb = color
-    s.line.fill.background()
-    return s
+# ========= HELPERS =========
+
+def set_bg(slide, color=BLACK):
+    fill = slide.background.fill
+    fill.solid()
+    fill.fore_color.rgb = color
 
 
-def add_corner_decorations(slide):
-    """Círculos decorativos: 1 arriba-izquierda + 3 abajo-derecha + flecha."""
-    add_dot(slide, 0.5, 0.5, 0.35, BEIGE)
-    add_dot(slide, 12.7, 5.7, 0.25, BEIGE)
-    add_dot(slide, 12.7, 6.2, 0.25, BEIGE)
-    add_dot(slide, 12.7, 6.7, 0.25, BEIGE)
-    # Flecha pequeña hacia derecha
-    arrow = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW,
-        Inches(12.0), Inches(6.5), Inches(0.7), Inches(0.15))
-    arrow.fill.solid()
-    arrow.fill.fore_color.rgb = BEIGE
-    arrow.line.fill.background()
+def no_line(shape):
+    shape.line.fill.background()
 
 
-def add_text(slide, text, x, y, w, h, *, size=18, bold=False, italic=False,
-             color=WHITE, font=FONT_BODY, align=PP_ALIGN.LEFT,
-             anchor=MSO_ANCHOR.TOP):
-    """Caja de texto formateada."""
-    tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+def add_corner_decoration(slide, only_top=False):
+    """1 círculo arriba-izq + 3 círculos y flecha abajo-der."""
+    c = slide.shapes.add_shape(MSO_SHAPE.OVAL,
+                              Inches(0.55), Inches(0.55),
+                              Inches(0.32), Inches(0.32))
+    c.fill.solid()
+    c.fill.fore_color.rgb = TAN
+    no_line(c)
+
+    if only_top:
+        return
+
+    for i in range(3):
+        c = slide.shapes.add_shape(MSO_SHAPE.OVAL,
+                                  Inches(12.65), Inches(5.5 + i * 0.55),
+                                  Inches(0.28), Inches(0.28))
+        c.fill.solid()
+        c.fill.fore_color.rgb = TAN
+        no_line(c)
+
+    arr = slide.shapes.add_shape(MSO_SHAPE.RIGHT_ARROW,
+                                Inches(12.5), Inches(7.15),
+                                Inches(0.55), Inches(0.18))
+    arr.fill.solid()
+    arr.fill.fore_color.rgb = TAN
+    no_line(arr)
+
+
+def add_footer(slide, page_num=None, total=None):
+    tb = slide.shapes.add_textbox(Inches(0.55), Inches(7.15),
+                                 Inches(7.0), Inches(0.25))
+    tf = tb.text_frame
+    tf.margin_top = 0
+    tf.margin_bottom = 0
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.LEFT
+    run = p.add_run()
+    run.text = "GYMMAX  ·  AVANCE 02  ·  DESARROLLO WEB INTEGRADO"
+    run.font.size = Pt(9)
+    run.font.bold = True
+    run.font.color.rgb = TAN
+    run.font.name = TITLE_FONT
+
+    if page_num and total:
+        tb2 = slide.shapes.add_textbox(Inches(11.5), Inches(7.15),
+                                      Inches(1.2), Inches(0.25))
+        tf2 = tb2.text_frame
+        p2 = tf2.paragraphs[0]
+        p2.alignment = PP_ALIGN.RIGHT
+        run2 = p2.add_run()
+        run2.text = f"{page_num} / {total}"
+        run2.font.size = Pt(9)
+        run2.font.color.rgb = GRAY
+        run2.font.name = BODY_FONT
+
+
+def add_title(slide, text, top=Inches(0.5), size=44, color=TAN, height=Inches(1.4)):
+    tb = slide.shapes.add_textbox(Inches(0.8), top,
+                                 Inches(SLIDE_W - 1.6), height)
     tf = tb.text_frame
     tf.word_wrap = True
-    tf.vertical_anchor = anchor
-    tf.margin_left = Pt(0)
-    tf.margin_right = Pt(0)
-    tf.margin_top = Pt(0)
-    tf.margin_bottom = Pt(0)
+    tf.margin_left = 0
+    tf.margin_right = 0
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.LEFT
+    run = p.add_run()
+    run.text = text.upper()
+    run.font.size = Pt(size)
+    run.font.bold = True
+    run.font.italic = True
+    run.font.color.rgb = color
+    run.font.name = TITLE_FONT
+    return tb
+
+
+def add_paragraph(slide, text, top, italic=True, color=WHITE_DIM, size=18,
+                  bold=False, align=PP_ALIGN.LEFT, height=Inches(4.5)):
+    tb = slide.shapes.add_textbox(Inches(0.9), top,
+                                 Inches(SLIDE_W - 1.8), height)
+    tf = tb.text_frame
+    tf.word_wrap = True
     p = tf.paragraphs[0]
     p.alignment = align
     run = p.add_run()
     run.text = text
     run.font.size = Pt(size)
-    run.font.bold = bold
     run.font.italic = italic
-    run.font.name = font
+    run.font.bold = bold
     run.font.color.rgb = color
+    run.font.name = BODY_FONT
     return tb
 
 
-def add_bullets(slide, items, x, y, w, h, *, size=18, color=WHITE,
-                bullet_color=BEIGE, line_spacing=1.2):
-    """Lista de bullets con guion estilizado."""
-    tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+def add_bullets(slide, items, top, italic=True, color=WHITE_DIM, size=16,
+                bullet="-", space_after=10, left=Inches(1.0), width=None):
+    if width is None:
+        width = Inches(SLIDE_W - 1.8)
+    tb = slide.shapes.add_textbox(left, top, width, Inches(4.8))
     tf = tb.text_frame
     tf.word_wrap = True
-    tf.margin_left = Pt(0)
-    tf.margin_right = Pt(0)
-    tf.margin_top = Pt(0)
-
-    for i, it in enumerate(items):
+    for i, item in enumerate(items):
         if i == 0:
             p = tf.paragraphs[0]
         else:
             p = tf.add_paragraph()
         p.alignment = PP_ALIGN.LEFT
-        p.line_spacing = line_spacing
-        # Bullet
-        b = p.add_run()
-        b.text = "• "
-        b.font.size = Pt(size + 2)
-        b.font.bold = True
-        b.font.name = FONT_BODY
-        b.font.color.rgb = bullet_color
-        # Texto
-        r = p.add_run()
-        r.text = it
-        r.font.size = Pt(size)
-        r.font.name = FONT_BODY
-        r.font.color.rgb = color
+        run = p.add_run()
+        run.text = f"{bullet} {item}" if bullet else item
+        run.font.size = Pt(size)
+        run.font.italic = italic
+        run.font.color.rgb = color
+        run.font.name = BODY_FONT
+        p.space_after = Pt(space_after)
     return tb
 
 
-def add_section_title(slide, text):
-    """Título grande arriba del slide, beige italic bold."""
-    return add_text(slide, text, 0.6, 0.5, 12.1, 1.3,
-                    size=36, bold=True, italic=True,
-                    color=BEIGE, font=FONT_TITLE,
-                    align=PP_ALIGN.LEFT)
+def add_image_placeholder(slide, x, y, w, h, label="INSERTAR IMAGEN"):
+    rect = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, x, y, w, h)
+    rect.fill.solid()
+    rect.fill.fore_color.rgb = RGBColor(0x22, 0x22, 0x22)
+    rect.line.color.rgb = TAN
+    rect.line.width = Pt(1.5)
+    tf = rect.text_frame
+    tf.word_wrap = True
+    tf.margin_top = Inches(0.1)
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.CENTER
+    run = p.add_run()
+    run.text = "[ " + label + " ]"
+    run.font.size = Pt(14)
+    run.font.bold = True
+    run.font.italic = True
+    run.font.color.rgb = TAN
+    run.font.name = BODY_FONT
 
 
-def add_footer(slide, slide_num, total=26):
-    """Pie con numeración y marca."""
-    add_text(slide, "GymMax — Avance 02", 0.4, 7.1, 5, 0.3,
-             size=10, color=GRAY, italic=True)
-    add_text(slide, f"{slide_num} / {total}", 12.2, 7.1, 1, 0.3,
-             size=10, color=GRAY, align=PP_ALIGN.RIGHT)
+def add_table(slide, x, y, w, h, headers, rows, header_size=11, body_size=10):
+    cols = len(headers)
+    rows_count = len(rows) + 1
+    table_shape = slide.shapes.add_table(rows_count, cols, x, y, w, h)
+    table = table_shape.table
+
+    for i, hdr in enumerate(headers):
+        cell = table.cell(0, i)
+        cell.text = ""
+        cell.fill.solid()
+        cell.fill.fore_color.rgb = TAN
+        tf = cell.text_frame
+        p = tf.paragraphs[0]
+        run = p.add_run()
+        run.text = hdr
+        run.font.size = Pt(header_size)
+        run.font.bold = True
+        run.font.color.rgb = BLACK
+        run.font.name = BODY_FONT
+        p.alignment = PP_ALIGN.CENTER
+
+    for r_idx, row in enumerate(rows, start=1):
+        for c_idx, val in enumerate(row):
+            cell = table.cell(r_idx, c_idx)
+            cell.text = ""
+            cell.fill.solid()
+            cell.fill.fore_color.rgb = RGBColor(0x1c, 0x1c, 0x1c)
+            tf = cell.text_frame
+            p = tf.paragraphs[0]
+            run = p.add_run()
+            run.text = str(val)
+            run.font.size = Pt(body_size)
+            run.font.color.rgb = WHITE_DIM
+            run.font.name = BODY_FONT
 
 
-def add_rounded_border(slide, x, y, w, h, color=BEIGE, weight=Pt(2)):
-    """Marco redondeado decorativo (como el de la portada del Avance 01)."""
-    s = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
-        Inches(x), Inches(y), Inches(w), Inches(h))
-    s.fill.background()
-    s.line.color.rgb = color
-    s.line.width = weight
-    s.adjustments[0] = 0.05
-    return s
+# ========= SLIDES =========
 
-
-# =========================================================
-#                    BUILDERS DE SLIDES
-# =========================================================
-
-def new_blank(prs):
-    """Slide en blanco con fondo negro."""
-    slide_layout = prs.slide_layouts[6]  # blank
-    slide = prs.slides.add_slide(slide_layout)
+def slide_blank(prs):
+    layout = prs.slide_layouts[6]
+    slide = prs.slides.add_slide(layout)
     set_bg(slide)
     return slide
 
 
 def slide_portada(prs):
-    slide = new_blank(prs)
-    # Marco redondeado central
-    add_rounded_border(slide, 1.3, 1.5, 10.7, 5, BEIGE, Pt(2.5))
-    # Etiqueta superior
-    add_text(slide, "DESARROLLO WEB INTEGRADO", 1.5, 1.9, 10.3, 0.5,
-             size=14, color=BEIGE_L, italic=True,
-             align=PP_ALIGN.CENTER, font=FONT_TITLE)
-    # Título grande
-    add_text(slide, "INFORME DE AVANCE 02 — GYMMAX", 1.5, 2.7, 10.3, 1.3,
-             size=44, bold=True, italic=True, color=BEIGE,
-             align=PP_ALIGN.CENTER, font=FONT_TITLE)
-    add_text(slide, "Diseño y avance de funcionalidad", 1.5, 4.2, 10.3, 0.5,
-             size=18, italic=True, color=WHITE,
-             align=PP_ALIGN.CENTER, font=FONT_TITLE)
-    # Pie del recuadro
-    add_text(slide, "UTP · Sec. 27672 · Mayo 2026",
-             1.5, 5.5, 10.3, 0.5,
-             size=14, italic=True, color=BEIGE_L,
-             align=PP_ALIGN.CENTER, font=FONT_TITLE)
-    # Decoración
-    add_dot(slide, 0.7, 0.7, 0.4, BEIGE)
-    add_dot(slide, 12.2, 6.5, 0.4, BEIGE)
-    # Marca UTP (texto)
-    add_text(slide, "U T P", 11.5, 0.4, 1.4, 0.7,
-             size=24, bold=True, color=RED_UTP,
-             align=PP_ALIGN.CENTER, font=FONT_TITLE)
+    slide = slide_blank(prs)
+
+    margin_x = Inches(1.3)
+    margin_y = Inches(0.7)
+    border = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        margin_x, margin_y,
+        Inches(SLIDE_W) - 2 * margin_x,
+        Inches(SLIDE_H) - 2 * margin_y)
+    border.fill.background()
+    border.line.color.rgb = TAN
+    border.line.width = Pt(2.5)
+
+    c = slide.shapes.add_shape(MSO_SHAPE.OVAL,
+                              Inches(1.7), Inches(1.1),
+                              Inches(0.3), Inches(0.3))
+    c.fill.solid()
+    c.fill.fore_color.rgb = TAN
+    no_line(c)
+
+    tb = slide.shapes.add_textbox(Inches(1.6), Inches(1.6),
+                                 Inches(10), Inches(1.5))
+    tf = tb.text_frame
+    tf.word_wrap = True
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.LEFT
+    run = p.add_run()
+    run.text = "INFORME DE AVANCE 02"
+    run.font.size = Pt(46)
+    run.font.bold = True
+    run.font.italic = True
+    run.font.color.rgb = TAN
+    run.font.name = TITLE_FONT
+
+    tb2 = slide.shapes.add_textbox(Inches(1.6), Inches(2.6),
+                                  Inches(10), Inches(1.2))
+    tf2 = tb2.text_frame
+    p2 = tf2.paragraphs[0]
+    p2.alignment = PP_ALIGN.LEFT
+    run2 = p2.add_run()
+    run2.text = "GYMMAX"
+    run2.font.size = Pt(72)
+    run2.font.bold = True
+    run2.font.italic = True
+    run2.font.color.rgb = TAN_BRIGHT
+    run2.font.name = TITLE_FONT
+
+    tb3 = slide.shapes.add_textbox(Inches(1.6), Inches(3.85),
+                                  Inches(10), Inches(0.6))
+    tf3 = tb3.text_frame
+    p3 = tf3.paragraphs[0]
+    p3.alignment = PP_ALIGN.LEFT
+    run3 = p3.add_run()
+    run3.text = "Sistema Integral de Gestión de Gimnasios"
+    run3.font.size = Pt(20)
+    run3.font.italic = True
+    run3.font.color.rgb = WHITE_DIM
+    run3.font.name = BODY_FONT
+
+    tb4 = slide.shapes.add_textbox(Inches(1.6), Inches(4.7),
+                                  Inches(10), Inches(0.5))
+    tf4 = tb4.text_frame
+    p4 = tf4.paragraphs[0]
+    run4 = p4.add_run()
+    run4.text = "INTEGRANTES:"
+    run4.font.size = Pt(16)
+    run4.font.bold = True
+    run4.font.italic = True
+    run4.font.color.rgb = TAN
+    run4.font.name = TITLE_FONT
+
+    integrantes = [
+        "CHOQUE ANCHANTE NIURKA YASBETH",
+        "DIAZ CULQUI NEHEMIAS",
+        "PURIZACA IPANAQUE DENNYS MARLON",
+        "SORIA CHAVEZ IAN",
+        "TORRE ESCOBAR OLIVER",
+        "VALLADOLID LLENQUE ALEXANDER",
+    ]
+
+    tb5 = slide.shapes.add_textbox(Inches(1.6), Inches(5.15),
+                                  Inches(9), Inches(1.8))
+    tf5 = tb5.text_frame
+    tf5.word_wrap = True
+    for i, nombre in enumerate(integrantes):
+        if i == 0:
+            p = tf5.paragraphs[0]
+        else:
+            p = tf5.add_paragraph()
+        run = p.add_run()
+        run.text = "- " + nombre
+        run.font.size = Pt(13)
+        run.font.bold = True
+        run.font.italic = True
+        run.font.color.rgb = TAN_BRIGHT
+        run.font.name = TITLE_FONT
+        p.space_after = Pt(2)
+
+    logo = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
+                                 Inches(11.2), Inches(5.7),
+                                 Inches(0.8), Inches(0.8))
+    logo.fill.solid()
+    logo.fill.fore_color.rgb = RGBColor(0xc8, 0x10, 0x2e)
+    no_line(logo)
+    tf = logo.text_frame
+    tf.margin_top = Inches(0.18)
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.CENTER
+    run = p.add_run()
+    run.text = "UTP"
+    run.font.size = Pt(20)
+    run.font.bold = True
+    run.font.color.rgb = WHITE
+
+    tbF = slide.shapes.add_textbox(Inches(1.6), Inches(6.6),
+                                  Inches(8), Inches(0.4))
+    tfF = tbF.text_frame
+    pF = tfF.paragraphs[0]
+    runF = pF.add_run()
+    runF.text = "DESARROLLO WEB INTEGRADO  ·  UTP  ·  MAYO 2026"
+    runF.font.size = Pt(11)
+    runF.font.bold = True
+    runF.font.italic = True
+    runF.font.color.rgb = TAN
+    runF.font.name = TITLE_FONT
 
 
 def slide_integrantes(prs):
-    slide = new_blank(prs)
-    add_section_title(slide, "INTEGRANTES")
-    integrantes = [
-        "Choque Anchante, Niurka Yasbeth",
-        "Diaz Culqui, Nehemias",
-        "Purizaca Ipanaque, Dennys Marlon",
-        "Soria Chavez, Ian",
-        "Torre Escobar, Oliver",
-        "Valladolid Llenque, Alexander",
-    ]
-    # Lista en beige bold como en el Avance 01
-    tb = slide.shapes.add_textbox(Inches(1.5), Inches(2.3),
-                                  Inches(10), Inches(4))
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 2, 26)
+
+    border = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE,
+                                   Inches(1.4), Inches(0.9),
+                                   Inches(10.5), Inches(5.7))
+    border.fill.background()
+    border.line.color.rgb = TAN
+    border.line.width = Pt(2)
+
+    add_title(slide, "INFORME DE AVANCE 02 — GYMMAX",
+              top=Inches(1.3), size=32)
+
+    tb = slide.shapes.add_textbox(Inches(1.9), Inches(2.5),
+                                 Inches(9), Inches(0.5))
     tf = tb.text_frame
-    tf.word_wrap = True
-    for i, n in enumerate(integrantes):
-        if i == 0:
-            p = tf.paragraphs[0]
-        else:
-            p = tf.add_paragraph()
-        p.alignment = PP_ALIGN.LEFT
-        p.line_spacing = 1.5
-        r = p.add_run()
-        r.text = f"-  {n}"
-        r.font.size = Pt(24)
-        r.font.bold = True
-        r.font.color.rgb = BEIGE
-        r.font.name = FONT_TITLE
-    add_corner_decorations(slide)
-    add_footer(slide, 2)
+    p = tf.paragraphs[0]
+    run = p.add_run()
+    run.text = "INTEGRANTES:"
+    run.font.size = Pt(20)
+    run.font.bold = True
+    run.font.italic = True
+    run.font.color.rgb = TAN
+    run.font.name = TITLE_FONT
+
+    integrantes = [
+        "CHOQUE ANCHANTE NIURKA YASBETH",
+        "DIAZ CULQUI NEHEMIAS",
+        "PURIZACA IPANAQUE DENNYS MARLON",
+        "SORIA CHAVEZ IAN",
+        "TORRE ESCOBAR OLIVER",
+        "VALLADOLID LLENQUE ALEXANDER",
+    ]
+    add_bullets(slide, integrantes, top=Inches(3.1),
+                size=18, color=TAN_BRIGHT, italic=True,
+                left=Inches(2.2))
 
 
 def slide_agenda(prs):
-    slide = new_blank(prs)
-    add_section_title(slide, "AGENDA")
-    temas = [
-        "1.  Introducción y problemática",
-        "2.  Objetivos y alcance",
-        "3.  Características del producto",
-        "4.  Product Backlog y User Stories",
-        "5.  Wireframes y flujos de navegación",
-        "6.  Modelo de Base de Datos (Lógico + Físico)",
-        "7.  Diagrama de Clases UML",
-        "8.  Tecnologías utilizadas",
-        "9.  Próximos pasos",
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 3, 26)
+    add_title(slide, "Agenda", size=54)
+
+    agenda = [
+        "Introducción y problemática",
+        "Objetivos y alcance",
+        "Características del producto",
+        "Product Backlog y User Stories",
+        "Wireframes y flujos de navegación",
+        "Modelo de Base de Datos (Lógico y Físico)",
+        "Diagrama de Clases UML",
+        "Tecnologías utilizadas",
+        "Próximos pasos y conclusiones",
     ]
-    tb = slide.shapes.add_textbox(Inches(1.5), Inches(2.0),
-                                  Inches(11), Inches(5))
+    add_bullets(slide, [f"{i+1}. {t}" for i, t in enumerate(agenda)],
+                top=Inches(2.1), size=20, italic=True,
+                color=TAN_BRIGHT, bullet="", space_after=14,
+                left=Inches(1.5))
+
+
+def slide_producto(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 4, 26)
+    add_title(slide, "El Producto", size=54)
+
+    add_paragraph(slide,
+        "GymMax es una plataforma web integral construida bajo la arquitectura "
+        "Java Enterprise Edition (JEE) que centraliza la gestión de cadenas "
+        "de gimnasios: sedes, socios, membresías digitales y reservas de clases.",
+        top=Inches(2.0), italic=True, size=17, height=Inches(2.0))
+
+    add_bullets(slide, [
+        "Plataforma centralizada multi-sede",
+        "Construida sobre Java EE + MySQL + Bootstrap 5.3",
+        "Diseño Mobile First — accesible desde cualquier dispositivo",
+        "Gestión completa del ciclo de vida del socio",
+    ], top=Inches(4.2), size=16, italic=True, color=TAN_BRIGHT)
+
+
+def slide_problematica(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 5, 26)
+    add_title(slide, "Introducción y Problemática", size=40)
+
+    add_paragraph(slide,
+        "Los gimnasios en Perú enfrentan serios desafíos en la gestión manual de "
+        "membresías, control de accesos y administración de sedes. Esta falta de "
+        "automatización genera pérdida de ingresos, sobrecarga administrativa y "
+        "mala experiencia para el socio.",
+        top=Inches(2.0), italic=True, size=15, height=Inches(1.8))
+
+    add_paragraph(slide, "Problemas identificados:",
+                  top=Inches(4.0), italic=True, bold=True,
+                  color=TAN, size=16, height=Inches(0.4))
+
+    add_bullets(slide, [
+        "Pérdida de ingresos por nulo control de vencimientos",
+        "Sobrecarga administrativa y procesos manuales",
+        "Procesos lentos y largas colas en recepción",
+        "Mala experiencia del socio (no puede gestionar desde celular)",
+        "Sistemas existentes con lentitud y caídas en horas pico",
+    ], top=Inches(4.5), size=15, italic=True, color=TAN_BRIGHT,
+       space_after=8, left=Inches(1.2))
+
+
+def slide_objetivo_gral(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 6, 26)
+    add_title(slide, "Objetivo del Proyecto General", size=40)
+
+    add_paragraph(slide,
+        "Desarrollar una aplicación web integral bajo la arquitectura Java "
+        "Enterprise Edition (JEE) que centralice la visualización de sedes, el "
+        "registro de socios y la venta de membresías digitales. Para lograrlo "
+        "se implementarán módulos de consulta de sedes con horarios y servicios, "
+        "un formulario de registro responsive con validación en tiempo real "
+        "almacenado en MySQL, y un sistema de gestión de planes que permita "
+        "renovaciones autónomas. Todo el diseño se basará en una interfaz "
+        "\"Mobile First\" utilizando Bootstrap 5.3 para garantizar accesibilidad total.",
+        top=Inches(2.0), italic=True, bold=True, size=16,
+        color=TAN_BRIGHT, height=Inches(5.0))
+
+
+def slide_objetivos_esp(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 7, 26)
+    add_title(slide, "Objetivos Específicos", size=44)
+
+    objs = [
+        "Implementar un módulo que permita visualizar todas las sedes disponibles, "
+        "incluyendo ubicación, horarios, servicios y cupos por clase.",
+        "Desarrollar un formulario web intuitivo y responsive para registro de "
+        "socios con validación en tiempo real y almacenamiento seguro en MySQL.",
+        "Crear un sistema de gestión de planes (básico, premium, anual) con "
+        "renovación autónoma, cálculo de vencimiento y comprobante digital.",
+        "Diseñar una interfaz Mobile First con Bootstrap 5.3, intuitiva y "
+        "accesible desde cualquier dispositivo.",
+        "Implementar panel administrativo con KPIs en tiempo real, CRUD de "
+        "entidades y reportes exportables a Excel y PDF.",
+    ]
+    add_bullets(slide, objs, top=Inches(1.8), size=14, italic=True,
+                color=TAN_BRIGHT, space_after=14, left=Inches(1.0))
+
+
+def slide_alcance(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 8, 26)
+    add_title(slide, "Alcance del Proyecto", size=44)
+
+    add_paragraph(slide,
+        "Plataforma web centralizada que permite la gestión completa del ciclo "
+        "de vida del socio: desde el registro inicial y la compra de membresías "
+        "hasta la reserva de clases por sede. Incluye panel administrativo, "
+        "reportes en tiempo real y arquitectura JEE escalable.",
+        top=Inches(1.9), italic=True, size=14, height=Inches(2.2))
+
+    add_paragraph(slide, "SÍ incluye:", top=Inches(4.2),
+                  italic=True, bold=True, color=TAN, size=14, height=Inches(0.4))
+    add_bullets(slide, [
+        "Multi-sede, multi-rol (Socio + Admin)",
+        "Membresías digitales y pagos online",
+        "Dashboard con KPIs y reportes exportables",
+    ], top=Inches(4.6), size=12, italic=True, color=TAN_BRIGHT,
+       space_after=4, left=Inches(1.0))
+
+    add_paragraph(slide, "NO incluye:", top=Inches(5.95),
+                  italic=True, bold=True, color=TAN, size=14, height=Inches(0.4))
+    add_bullets(slide, [
+        "Pagos en efectivo (solo digitales)",
+        "App móvil nativa (Android/iOS)",
+        "Integración biométrica de accesos",
+    ], top=Inches(6.35), size=12, italic=True, color=TAN_BRIGHT,
+       space_after=2, left=Inches(1.0))
+
+
+def slide_caracteristicas(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 9, 26)
+    add_title(slide, "Características del Producto", size=38)
+
+    add_bullets(slide, [
+        "Gestión multi-sede centralizada",
+        "Sistema de roles diferenciados (Socio / Administrador)",
+        "Registro y autenticación con validación en tiempo real",
+        "Membresías digitales (Básico, Premium, Anual)",
+        "Reserva de clases online con control de cupos",
+        "Pagos digitales: Yape, Plin, Tarjeta",
+        "Dashboard administrativo con KPIs en tiempo real",
+        "Reportes filtrables y exportación a Excel / PDF",
+        "Diseño Mobile First con Bootstrap 5.3",
+        "Arquitectura por capas MVC + DAO + Facade",
+    ], top=Inches(1.95), size=14, italic=True, color=TAN_BRIGHT,
+       space_after=6)
+
+
+def slide_backlog(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 10, 26)
+    add_title(slide, "Product Backlog", size=44)
+
+    add_paragraph(slide,
+        "28 requerimientos funcionales + 12 no funcionales distribuidos en 5 sprints.",
+        top=Inches(1.8), size=14, italic=True, height=Inches(0.5))
+
+    add_table(slide, Inches(1.5), Inches(2.5),
+              Inches(10.3), Inches(3.5),
+              ["Sprint", "Foco", "Items", "SP"],
+              [
+                  ("1", "Autenticación + base socio", "RF-01, 02, 04, 05, 06, 18", "22"),
+                  ("2", "Sedes, clases y reservas", "RF-07, 08, 09, 10, 11, 19, 20, 21", "37"),
+                  ("3", "Membresías y pagos", "RF-03, 12, 13, 14, 15, 16, 17, 22", "41"),
+                  ("4", "Reportes y asistencias", "RF-23, 24, 25, 26, 28", "26"),
+                  ("5", "Notificaciones", "RF-27", "8"),
+              ],
+              header_size=12, body_size=11)
+
+    add_paragraph(slide, "Total: 134 Story Points en 5 sprints.",
+                  top=Inches(6.3), size=12, italic=True, color=TAN)
+
+
+def slide_user_stories(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 11, 26)
+    add_title(slide, "User Stories Destacadas", size=40)
+
+    add_paragraph(slide, "US-08 — Reservar clase",
+                  top=Inches(1.9), bold=True, italic=True,
+                  color=TAN, size=14, height=Inches(0.4))
+    add_paragraph(slide,
+        "Como socio con membresía activa quiero reservar una clase para asegurar "
+        "mi cupo. Verifica membresía + cupos + duplicado.",
+        top=Inches(2.35), italic=True, size=12,
+        color=WHITE_DIM, height=Inches(0.8))
+
+    add_paragraph(slide, "US-14 — Dashboard administrativo",
+                  top=Inches(3.3), bold=True, italic=True,
+                  color=TAN, size=14, height=Inches(0.4))
+    add_paragraph(slide,
+        "Como admin quiero ver KPIs en tiempo real para decidir. 4 KPIs + "
+        "variación porcentual + gráfico de ingresos últimos 6 meses.",
+        top=Inches(3.75), italic=True, size=12,
+        color=WHITE_DIM, height=Inches(0.8))
+
+    add_paragraph(slide, "US-17 — Generación de reportes",
+                  top=Inches(4.7), bold=True, italic=True,
+                  color=TAN, size=14, height=Inches(0.4))
+    add_paragraph(slide,
+        "Como admin quiero reportes filtrables (4 tipos) con exportación a "
+        "Excel y PDF para compartirlos con la gerencia.",
+        top=Inches(5.15), italic=True, size=12,
+        color=WHITE_DIM, height=Inches(0.8))
+
+    add_paragraph(slide,
+        "El informe Word contiene las 18 historias completas con criterios de aceptación.",
+        top=Inches(6.4), italic=True, size=11, color=GRAY)
+
+
+def slide_flujo_socio(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 12, 26)
+    add_title(slide, "Flujo de Navegación — Socio", size=36)
+
+    add_image_placeholder(slide, Inches(1.6), Inches(2.0),
+                         Inches(10), Inches(4.0),
+                         "INSERTAR DIAGRAMA DE FLUJO SOCIO (del Avance 01)")
+    add_paragraph(slide,
+        "Login → validar credenciales → Dashboard del socio → "
+        "Ver sedes / Reservar clase / Mis reservas",
+        top=Inches(6.3), italic=True, size=12, color=TAN_BRIGHT)
+
+
+def slide_flujo_admin(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 13, 26)
+    add_title(slide, "Flujo de Navegación — Administrador", size=32)
+
+    add_image_placeholder(slide, Inches(1.6), Inches(2.0),
+                         Inches(10), Inches(4.0),
+                         "INSERTAR DIAGRAMA DE FLUJO ADMIN (del Avance 01)")
+    add_paragraph(slide,
+        "Login → validar rol ADMIN → Dashboard administrativo → "
+        "Gestión socios / Gestión sedes / Reportes",
+        top=Inches(6.3), italic=True, size=12, color=TAN_BRIGHT)
+
+
+def slide_mockups_mobile_1(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 14, 26)
+    add_title(slide, "Wireframes Mobile (1/2)", size=36)
+
+    add_image_placeholder(slide, Inches(0.9), Inches(2.0),
+                         Inches(3.7), Inches(4.5), "Login")
+    add_image_placeholder(slide, Inches(4.85), Inches(2.0),
+                         Inches(3.7), Inches(4.5), "Registro")
+    add_image_placeholder(slide, Inches(8.8), Inches(2.0),
+                         Inches(3.7), Inches(4.5), "Dashboard Socio")
+
+
+def slide_mockups_mobile_2(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 15, 26)
+    add_title(slide, "Wireframes Mobile (2/2)", size=36)
+
+    add_image_placeholder(slide, Inches(0.9), Inches(2.0),
+                         Inches(3.7), Inches(4.5), "Listado Sedes")
+    add_image_placeholder(slide, Inches(4.85), Inches(2.0),
+                         Inches(3.7), Inches(4.5), "Reservar Clase")
+    add_image_placeholder(slide, Inches(8.8), Inches(2.0),
+                         Inches(3.7), Inches(4.5), "Mis Reservas")
+
+
+def slide_mockups_desktop(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 16, 26)
+    add_title(slide, "Wireframes Desktop", size=40)
+
+    add_image_placeholder(slide, Inches(0.9), Inches(2.0),
+                         Inches(5.9), Inches(4.5),
+                         "Dashboard Admin (KPIs)")
+    add_image_placeholder(slide, Inches(6.95), Inches(2.0),
+                         Inches(5.6), Inches(4.5),
+                         "Gestión de Socios")
+
+
+def slide_reportes_desktop(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 17, 26)
+    add_title(slide, "Reportes — Versión Desktop", size=38)
+
+    add_image_placeholder(slide, Inches(2.0), Inches(2.0),
+                         Inches(9.3), Inches(4.5),
+                         "Generación de Reportes con gráfico y tabla")
+
+
+def slide_bd_logico(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 18, 26)
+    add_title(slide, "Modelo de Base de Datos — Lógico", size=34)
+
+    add_image_placeholder(slide, Inches(1.0), Inches(1.9),
+                         Inches(11.3), Inches(4.0),
+                         "Diagrama Lógico (Draw.io / Lucid Chart)")
+    add_paragraph(slide,
+        "10 entidades · 10 relaciones · sin tipos de dato · orientado al negocio",
+        top=Inches(6.2), italic=True, size=12, color=TAN_BRIGHT)
+
+
+def slide_bd_fisico(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 19, 26)
+    add_title(slide, "Modelo de Base de Datos — Físico", size=34)
+
+    add_image_placeholder(slide, Inches(1.0), Inches(1.9),
+                         Inches(11.3), Inches(4.0),
+                         "Diagrama Físico MySQL 8.0 (Draw.io / Lucid Chart)")
+    add_paragraph(slide,
+        "Motor InnoDB · charset utf8mb4 · 10 tablas con tipos MySQL · "
+        "PKs, FKs, ENUMs, índices",
+        top=Inches(6.2), italic=True, size=12, color=TAN_BRIGHT)
+
+
+def slide_tecnologias(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 20, 26)
+    add_title(slide, "Stack Tecnológico", size=44)
+
+    add_table(slide, Inches(2.0), Inches(2.0),
+              Inches(9.3), Inches(4.7),
+              ["Capa", "Tecnología"],
+              [
+                  ("Lenguaje", "Java 11 + Jakarta EE 10"),
+                  ("Frontend", "JSP + HTML5 + Bootstrap 5.3"),
+                  ("Controlador", "Servlets Jakarta 6.0"),
+                  ("Lógica negocio", "Facades (POJO)"),
+                  ("Persistencia", "JDBC + DAO + Connector/J"),
+                  ("Base de datos", "MySQL 8.0 Community"),
+                  ("Servidor", "Apache Tomcat 10.1"),
+                  ("IDE", "NetBeans 21+"),
+                  ("Modelado", "Draw.io / Lucid Chart"),
+                  ("Metodología", "Scrum (sprints 2 semanas)"),
+              ],
+              header_size=14, body_size=12)
+
+
+def slide_uml_1(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 21, 26)
+    add_title(slide, "Diagrama de Clases UML (1/2)", size=36)
+
+    add_image_placeholder(slide, Inches(1.0), Inches(1.9),
+                         Inches(11.3), Inches(4.0),
+                         "DTOs + DAOs (interfaces + implementaciones)")
+    add_paragraph(slide,
+        "10 DTOs (modelo de datos) + 9 interfaces DAO + 9 implementaciones JDBC. "
+        "Programación a interfaces para desacoplar persistencia.",
+        top=Inches(6.2), italic=True, size=12, color=TAN_BRIGHT,
+        height=Inches(0.8))
+
+
+def slide_uml_2(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 22, 26)
+    add_title(slide, "Diagrama de Clases UML (2/2)", size=36)
+
+    add_image_placeholder(slide, Inches(1.0), Inches(1.9),
+                         Inches(11.3), Inches(4.0),
+                         "Facades + Servlets + Conexion")
+    add_paragraph(slide,
+        "5 Facades (lógica de negocio) · 5 Servlets (controladores MVC) · "
+        "1 Conexion singleton. Total: 39 clases.",
+        top=Inches(6.2), italic=True, size=12, color=TAN_BRIGHT,
+        height=Inches(0.8))
+
+
+def slide_diccionario(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 23, 26)
+    add_title(slide, "Diccionario de Clases", size=44)
+
+    add_table(slide, Inches(3.0), Inches(2.0),
+              Inches(7.3), Inches(4.2),
+              ["Capa", "Cantidad"],
+              [
+                  ("DTO", "10 clases"),
+                  ("DAO interfaces", "9"),
+                  ("DAO implementaciones", "9"),
+                  ("Facades", "5"),
+                  ("Controllers (Servlets)", "5"),
+                  ("Utilitaria (Conexion)", "1"),
+                  ("TOTAL", "39 clases"),
+              ],
+              header_size=14, body_size=12)
+
+    add_paragraph(slide,
+        "El informe Word contiene la descripción detallada de cada clase con "
+        "atributos, métodos, parámetros y reglas de negocio.",
+        top=Inches(6.4), italic=True, size=12, color=TAN_BRIGHT,
+        align=PP_ALIGN.CENTER)
+
+
+def slide_patrones(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 24, 26)
+    add_title(slide, "Patrones de Diseño Aplicados", size=38)
+
+    add_bullets(slide, [
+        "MVC  ·  Model (DTO) — View (JSP) — Controller (Servlet)",
+        "DAO  ·  Aislamiento del acceso a datos mediante interfaces + implementación",
+        "Facade  ·  Encapsulamiento de la lógica de negocio entre Controller y DAO",
+        "Singleton  ·  Helper único de conexión JDBC (Conexion.java)",
+        "DTO  ·  Objetos planos que transportan datos entre capas",
+        "Programación a interfaces  ·  Bajo acoplamiento, fácil testing y mantenimiento",
+    ], top=Inches(2.1), size=16, italic=True, color=TAN_BRIGHT,
+       space_after=14, left=Inches(1.0))
+
+
+def slide_proximos(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 25, 26)
+    add_title(slide, "Hoja de Ruta — Entrega Final", size=38)
+
+    add_bullets(slide, [
+        "Sprint 1-2  (Semanas 11-12)  ·  Autenticación + dashboard socio + listado de sedes",
+        "Sprint 3    (Semana 13)        ·  Reservas de clases + membresías y pagos",
+        "Sprint 4    (Semana 14)        ·  Panel administrativo + reportes + exportación",
+        "Sprint 5    (Semana 15)        ·  Notificaciones + pruebas integrales + documentación final",
+    ], top=Inches(2.5), size=15, italic=True, color=TAN_BRIGHT,
+       space_after=20, left=Inches(0.8))
+
+
+def slide_conclusiones(prs):
+    slide = slide_blank(prs)
+    add_corner_decoration(slide)
+    add_footer(slide, 26, 26)
+    add_title(slide, "Conclusiones", size=54)
+
+    add_bullets(slide, [
+        "Diseño completo del sistema cubierto: 18 user stories, 40 requerimientos",
+        "Modelo de datos validado: 10 tablas normalizadas + script SQL listo",
+        "Arquitectura por capas definida: 39 clases organizadas en 5 paquetes",
+        "Stack tecnológico consolidado: Java EE + MySQL + Bootstrap + Tomcat",
+        "Equipo alineado y listo para iniciar Sprint 1 a partir de la Semana 11",
+    ], top=Inches(2.3), size=16, italic=True, color=TAN_BRIGHT,
+       space_after=18, left=Inches(0.9))
+
+
+def slide_gracias(prs):
+    slide = slide_blank(prs)
+    tb = slide.shapes.add_textbox(Inches(0.5), Inches(2.7),
+                                 Inches(12.3), Inches(2.5))
     tf = tb.text_frame
-    tf.word_wrap = True
-    for i, t in enumerate(temas):
-        if i == 0:
-            p = tf.paragraphs[0]
-        else:
-            p = tf.add_paragraph()
-        p.alignment = PP_ALIGN.LEFT
-        p.line_spacing = 1.4
-        r = p.add_run()
-        r.text = t
-        r.font.size = Pt(22)
-        r.font.italic = True
-        r.font.color.rgb = WHITE
-        r.font.name = FONT_TITLE
-    add_corner_decorations(slide)
-    add_footer(slide, 3)
+    p = tf.paragraphs[0]
+    p.alignment = PP_ALIGN.CENTER
+    run = p.add_run()
+    run.text = "GRACIAS"
+    run.font.size = Pt(140)
+    run.font.bold = True
+    run.font.italic = True
+    run.font.color.rgb = TAN
+    run.font.name = TITLE_FONT
 
 
-def slide_content(prs, num, title, bullets=None, paragraph=None,
-                  notes=None, font_size=18):
-    """Slide estándar de contenido."""
-    slide = new_blank(prs)
-    add_section_title(slide, title)
-    if paragraph:
-        add_text(slide, paragraph, 1.0, 2.0, 11.3, 4.5,
-                 size=font_size, italic=True, color=WHITE,
-                 align=PP_ALIGN.LEFT)
-    if bullets:
-        add_bullets(slide, bullets, 1.0, 2.0, 11.3, 4.8,
-                    size=font_size, color=WHITE)
-    if notes:
-        slide.notes_slide.notes_text_frame.text = notes
-    add_corner_decorations(slide)
-    add_footer(slide, num)
-
-
-def slide_two_columns(prs, num, title, col1_title, col1_items,
-                       col2_title, col2_items, notes=None):
-    """Slide con dos columnas comparativas."""
-    slide = new_blank(prs)
-    add_section_title(slide, title)
-    # Columna 1
-    add_text(slide, col1_title, 0.7, 2.0, 5.8, 0.6,
-             size=20, bold=True, italic=True, color=BEIGE)
-    add_bullets(slide, col1_items, 0.7, 2.7, 5.8, 4.2, size=15)
-    # Columna 2
-    add_text(slide, col2_title, 6.8, 2.0, 5.8, 0.6,
-             size=20, bold=True, italic=True, color=BEIGE)
-    add_bullets(slide, col2_items, 6.8, 2.7, 5.8, 4.2, size=15)
-    if notes:
-        slide.notes_slide.notes_text_frame.text = notes
-    add_corner_decorations(slide)
-    add_footer(slide, num)
-
-
-def slide_imagen_placeholder(prs, num, title, descripcion, notes=None):
-    """Slide para pegar imágenes (mockups, diagramas)."""
-    slide = new_blank(prs)
-    add_section_title(slide, title)
-    # Rectángulo placeholder
-    box = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE,
-        Inches(1.5), Inches(2.0), Inches(10.3), Inches(4.3))
-    box.fill.solid()
-    box.fill.fore_color.rgb = RGBColor(0x33, 0x33, 0x33)
-    box.line.color.rgb = BEIGE
-    box.line.width = Pt(1.5)
-    add_text(slide, "[ INSERTAR IMAGEN AQUÍ ]", 1.5, 3.7, 10.3, 0.5,
-             size=18, bold=True, italic=True, color=BEIGE_L,
-             align=PP_ALIGN.CENTER)
-    add_text(slide, descripcion, 1.5, 4.4, 10.3, 0.6,
-             size=13, italic=True, color=GRAY,
-             align=PP_ALIGN.CENTER)
-    if notes:
-        slide.notes_slide.notes_text_frame.text = notes
-    add_corner_decorations(slide)
-    add_footer(slide, num)
-
-
-def slide_tabla(prs, num, title, headers, rows, notes=None):
-    """Slide con tabla."""
-    slide = new_blank(prs)
-    add_section_title(slide, title)
-    n_rows = len(rows) + 1
-    n_cols = len(headers)
-    table_shape = slide.shapes.add_table(n_rows, n_cols,
-        Inches(0.8), Inches(2.0), Inches(11.7), Inches(4.5))
-    tbl = table_shape.table
-
-    for c, h in enumerate(headers):
-        cell = tbl.cell(0, c)
-        cell.text = h
-        cell.fill.solid()
-        cell.fill.fore_color.rgb = BEIGE
-        for p in cell.text_frame.paragraphs:
-            for r in p.runs:
-                r.font.bold = True
-                r.font.size = Pt(13)
-                r.font.color.rgb = BG_DARK
-                r.font.name = FONT_BODY
-
-    for r_idx, row in enumerate(rows, start=1):
-        for c_idx, val in enumerate(row):
-            cell = tbl.cell(r_idx, c_idx)
-            cell.text = str(val)
-            cell.fill.solid()
-            cell.fill.fore_color.rgb = RGBColor(0x2a, 0x2a, 0x2a)
-            for p in cell.text_frame.paragraphs:
-                for run in p.runs:
-                    run.font.size = Pt(12)
-                    run.font.color.rgb = WHITE
-                    run.font.name = FONT_BODY
-    if notes:
-        slide.notes_slide.notes_text_frame.text = notes
-    add_corner_decorations(slide)
-    add_footer(slide, num)
-
-
-def slide_gracias(prs, num):
-    slide = new_blank(prs)
-    add_text(slide, "GRACIAS", 0, 2.7, 13.33, 2,
-             size=120, bold=True, italic=True, color=BEIGE,
-             align=PP_ALIGN.CENTER, font=FONT_TITLE)
-    add_text(slide, "Equipo Grupo 3 — UTP 2026",
-             0, 5.0, 13.33, 0.5,
-             size=18, italic=True, color=WHITE,
-             align=PP_ALIGN.CENTER)
-    add_dot(slide, 0.5, 0.5, 0.4, BEIGE)
-    add_dot(slide, 12.4, 6.6, 0.4, BEIGE)
-
-
-# =========================================================
-#                       MAIN
-# =========================================================
+# ========= MAIN =========
 
 def main():
     print("Generando PowerPoint estilo Avance 01...")
     prs = Presentation()
-    prs.slide_width = Inches(13.333)
-    prs.slide_height = Inches(7.5)
+    prs.slide_width = Inches(SLIDE_W)
+    prs.slide_height = Inches(SLIDE_H)
 
-    # 1 — Portada
     slide_portada(prs)
-
-    # 2 — Integrantes
     slide_integrantes(prs)
-
-    # 3 — Agenda
     slide_agenda(prs)
-
-    # 4 — ¿Qué es GymMax?
-    slide_content(prs, 4, "¿QUÉ ES GYMMAX?", bullets=[
-        "Plataforma web centralizada para gestión de cadenas de gimnasios",
-        "Construida sobre Java EE + MySQL + Bootstrap 5.3",
-        "Enfoque Mobile First: accesible desde cualquier dispositivo",
-        "Centraliza: sedes, socios, membresías, reservas, pagos y reportes",
-    ])
-
-    # 5 — Problemática
-    slide_content(prs, 5, "¿QUÉ PROBLEMAS RESOLVEMOS?", bullets=[
-        "Pérdida de ingresos por falta de control de vencimientos",
-        "Sobrecarga administrativa y procesos manuales",
-        "Colas largas en recepción en horarios pico",
-        "Mala experiencia del socio: no puede autogestionarse desde el celular",
-        "Sistemas existentes lentos y poco escalables",
-    ], notes="Estos 5 problemas fueron validados en investigación de antecedentes del sector peruano (SmartGym, GymSys, BodyTrack).")
-
-    # 6 — Objetivos
-    slide_content(prs, 6, "OBJETIVO GENERAL Y ESPECÍFICOS", bullets=[
-        "GENERAL: aplicación web JEE que centralice sedes, socios, membresías y reservas con interfaz Mobile First",
-        "1. Módulo de consulta de sedes con cupos por clase",
-        "2. Formulario responsive de registro con validación tiempo real",
-        "3. Sistema de planes (Básico / Premium / Anual) con renovación autónoma",
-        "4. Diseño Mobile First con Bootstrap 5.3",
-        "5. Panel admin con KPIs y reportes exportables",
-        "6. Arquitectura por capas MVC + DAO + Facade",
-    ], font_size=15)
-
-    # 7 — Alcance (2 columnas)
-    slide_two_columns(prs, 7, "ALCANCE DEL PROYECTO",
-        "SÍ INCLUYE", [
-            "Multi-sede centralizada",
-            "Roles Socio + Administrador",
-            "Membresías digitales (3 planes)",
-            "Reservas con control de cupos",
-            "Pagos digitales (Yape/Plin/Tarjeta)",
-            "Dashboard KPIs + reportes Excel/PDF",
-        ],
-        "NO INCLUYE (esta versión)", [
-            "Pagos en efectivo",
-            "App nativa Android/iOS",
-            "Biometría de acceso",
-            "Marketing por correo masivo",
-            "Integración contable externa",
-        ])
-
-    # 8 — Características
-    slide_content(prs, 8, "10 CARACTERÍSTICAS CLAVE", bullets=[
-        "Multi-sede centralizada",
-        "Sistema de roles Socio / Admin",
-        "Mobile First responsive (Bootstrap 5.3)",
-        "Pagos digitales (Yape, Plin, Tarjeta)",
-        "Dashboard administrativo con KPIs",
-        "Reservas online con control de cupos en tiempo real",
-        "Validación en frontend y backend",
-        "Reportes exportables a Excel y PDF",
-        "Seguridad y control de sesión por rol",
-        "Arquitectura por capas MVC + DAO + Facade",
-    ], font_size=15)
-
-    # 9 — Product Backlog
-    slide_tabla(prs, 9, "PRODUCT BACKLOG — SPRINTS",
-        ["Sprint", "Foco", "Story Points"],
-        [
-            ["Sprint 1", "Autenticación + base del socio", "22 SP"],
-            ["Sprint 2", "Sedes + clases + reservas", "37 SP"],
-            ["Sprint 3", "Membresías + pagos", "41 SP"],
-            ["Sprint 4", "Reportes + asistencias", "26 SP"],
-            ["Sprint 5", "Notificaciones + cierre", "8 SP"],
-            ["TOTAL", "28 RF + 12 RNF", "134 SP"],
-        ],
-        notes="El backlog completo está en el informe Word con las 40 historias detalladas.")
-
-    # 10 — User Stories destacadas
-    slide_content(prs, 10, "USER STORIES DESTACADAS", bullets=[
-        "US-08 Reservar clase: como socio con membresía activa quiero reservar una clase para asegurar mi cupo (valida membresía, descuenta cupo, confirma)",
-        "US-14 Dashboard Admin: como admin quiero ver KPIs en tiempo real para decidir (4 KPIs, variación %, gráfico de 6 meses)",
-        "US-17 Reportes: como admin quiero generar reportes filtrables (4 tipos, filtros sede + fecha, exportar Excel/PDF)",
-    ], font_size=15,
-       notes="El documento incluye las 18 historias completas con criterios de aceptación verificables.")
-
-    # 11 — Flujo Socio
-    slide_imagen_placeholder(prs, 11, "FLUJO DE NAVEGACIÓN — SOCIO",
-        "Captura del diagrama de flujo del Socio (Avance 01: login → dashboard → sedes/reservas/mis reservas)",
-        notes="El socio ingresa al login; si sus credenciales son válidas accede al dashboard; si no, puede registrarse.")
-
-    # 12 — Flujo Admin
-    slide_imagen_placeholder(prs, 12, "FLUJO DE NAVEGACIÓN — ADMINISTRADOR",
-        "Captura del diagrama de flujo del Admin (Avance 01: login → adminDashboard → gestionSocios/gestionSedes/reportes)")
-
-    # 13 — Mockups Mobile 1
-    slide_imagen_placeholder(prs, 13, "WIREFRAMES MOBILE (1/2)",
-        "Capturas del Avance 01: Login del socio · Registro de socio · Dashboard del socio")
-
-    # 14 — Mockups Mobile 2
-    slide_imagen_placeholder(prs, 14, "WIREFRAMES MOBILE (2/2)",
-        "Capturas del Avance 01: Listado de sedes · Reservar clase · Mis reservas")
-
-    # 15 — Desktop Admin
-    slide_imagen_placeholder(prs, 15, "WIREFRAMES DESKTOP — ADMIN",
-        "Capturas del Avance 01: Dashboard administrativo (KPIs, gráficos) · Gestión de socios (tabla CRUD)")
-
-    # 16 — Desktop Reportes
-    slide_imagen_placeholder(prs, 16, "WIREFRAMES DESKTOP — REPORTES",
-        "Captura del mockup: Generación de reportes (gráfico de barras + tabla de resumen numérico)")
-
-    # 17 — BD Lógico
-    slide_imagen_placeholder(prs, 17, "MODELO DE BASE DE DATOS — LÓGICO",
-        "Captura del diagrama lógico hecho en Draw.io: 10 entidades sin tipos de dato, con relaciones",
-        notes="El modelo lógico representa las entidades del negocio sin atarse a un SGBD específico.")
-
-    # 18 — BD Físico
-    slide_imagen_placeholder(prs, 18, "MODELO DE BASE DE DATOS — FÍSICO",
-        "Captura del diagrama físico Draw.io: tipos MySQL (VARCHAR, INT, ENUM), PK, FK, restricciones",
-        notes="Motor InnoDB con integridad referencial, charset utf8mb4, script SQL en anexos del Word.")
-
-    # 19 — Tecnologías
-    slide_tabla(prs, 19, "STACK TECNOLÓGICO",
-        ["Capa", "Tecnología"],
-        [
-            ["Lenguaje", "Java 11 + Jakarta EE 10"],
-            ["Frontend", "JSP + Bootstrap 5.3 + HTML5"],
-            ["Controlador", "Servlets (Jakarta 6.0)"],
-            ["Persistencia", "JDBC + DAO + MySQL Connector"],
-            ["Base de datos", "MySQL 8.0 Community"],
-            ["Servidor", "Apache Tomcat 10.1"],
-            ["IDE", "Apache NetBeans 21"],
-            ["Diagramas", "Draw.io / Lucid Chart"],
-            ["Metodología", "Scrum (sprints de 2 semanas)"],
-        ])
-
-    # 20 — UML DTOs
-    slide_imagen_placeholder(prs, 20, "DIAGRAMA DE CLASES UML (1/2)",
-        "Capa DTO: 10 clases POJO + Capa DAO: 9 interfaces I*DAO + 9 implementaciones *DAOImpl",
-        notes="Programación a interfaces (I*DAO) para desacoplar la persistencia de la lógica de negocio.")
-
-    # 21 — UML Facades
-    slide_imagen_placeholder(prs, 21, "DIAGRAMA DE CLASES UML (2/2)",
-        "Capa Facade (5 clases) + Capa Controller (5 Servlets) + clase Conexion (singleton)",
-        notes="Facade encapsula reglas de negocio; Servlets coordinan vista y modelo (patrón MVC).")
-
-    # 22 — Diccionario
-    slide_tabla(prs, 22, "DICCIONARIO DE CLASES — RESUMEN",
-        ["Capa", "Cantidad"],
-        [
-            ["DTO", "10 clases"],
-            ["DAO interfaces", "9"],
-            ["DAO implementaciones", "9"],
-            ["Facades", "5"],
-            ["Controllers (Servlets)", "5"],
-            ["Utilitaria (Conexion)", "1"],
-            ["TOTAL", "39 clases"],
-        ],
-        notes="El diccionario completo con atributos, métodos, parámetros y descripciones está en el informe Word.")
-
-    # 23 — Patrones
-    slide_content(prs, 23, "PATRONES DE DISEÑO APLICADOS", bullets=[
-        "MVC — Modelo (DTO) · Vista (JSP) · Controlador (Servlet)",
-        "DAO — Aislamiento del acceso a datos (interface + impl)",
-        "Facade — Encapsulamiento de reglas de negocio",
-        "Singleton — Helper Conexion único para JDBC",
-        "DTO — Objetos planos para transportar datos entre capas",
-    ])
-
-    # 24 — Próximos pasos
-    slide_content(prs, 24, "HOJA DE RUTA — ENTREGA FINAL", bullets=[
-        "Sprint 1-2 (Sem 11-12): autenticación + dashboard socio + listado de sedes",
-        "Sprint 3 (Sem 13): reservas de clases + membresías y pagos",
-        "Sprint 4 (Sem 14): panel administrativo + reportes + exportación",
-        "Sprint 5 (Sem 15): notificaciones + pruebas integrales + documentación final",
-    ], font_size=16)
-
-    # 25 — Conclusiones
-    slide_content(prs, 25, "CONCLUSIONES DEL AVANCE 02", bullets=[
-        "Diseño completo: 18 user stories, 40 requerimientos identificados",
-        "Modelo de datos validado: 10 tablas normalizadas + script SQL ejecutable",
-        "Arquitectura por capas definida: 39 clases organizadas en 5 paquetes",
-        "Stack consolidado: Java EE + MySQL + Bootstrap + Tomcat",
-        "Repositorio Git público creado y documentación versionada",
-    ])
-
-    # 26 — Gracias
-    slide_gracias(prs, 26)
+    slide_producto(prs)
+    slide_problematica(prs)
+    slide_objetivo_gral(prs)
+    slide_objetivos_esp(prs)
+    slide_alcance(prs)
+    slide_caracteristicas(prs)
+    slide_backlog(prs)
+    slide_user_stories(prs)
+    slide_flujo_socio(prs)
+    slide_flujo_admin(prs)
+    slide_mockups_mobile_1(prs)
+    slide_mockups_mobile_2(prs)
+    slide_mockups_desktop(prs)
+    slide_reportes_desktop(prs)
+    slide_bd_logico(prs)
+    slide_bd_fisico(prs)
+    slide_tecnologias(prs)
+    slide_uml_1(prs)
+    slide_uml_2(prs)
+    slide_diccionario(prs)
+    slide_patrones(prs)
+    slide_proximos(prs)
+    slide_conclusiones(prs)
+    slide_gracias(prs)
 
     prs.save(OUT)
     print(f"  -> {OUT}")
-    print("\n=== PowerPoint generado ===")
+    print(f"\nTotal: {len(prs.slides)} slides\n")
+    print("=== PowerPoint generado ===")
 
 
 if __name__ == "__main__":
