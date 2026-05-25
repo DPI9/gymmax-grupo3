@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>GymMax — Diagrama de Clases UML</title>
+<style>
+:root{
+  --orange:#FF6B00;
+  --dark:#1a1a1a;
+  --pkg-dto:#fff5e6;
+  --pkg-dao:#e8f5e9;
+  --pkg-facade:#e3f2fd;
+  --pkg-ctrl:#fce4ec;
+  --pkg-util:#f3e5f5;
+}
+body{
+  font-family:'Segoe UI', Arial, sans-serif;
+  background:#fff;
+  margin:0;
+  padding:30px;
+  color:#222;
+}
+h1{
+  background:var(--dark);
+  color:#fff;
+  padding:14px 24px;
+  margin:30px 0 20px;
+  border-left:6px solid var(--orange);
+}
+.help-banner{
+  background:#e7f3ff;
+  border-left:4px solid #1971c2;
+  padding:12px 18px;
+  margin:20px 0;
+  font-size:13px;
+  border-radius:3px;
+}
+.help-banner b{color:#1971c2;}
+.diagram-wrapper{
+  background:#fafafa;
+  border:1px solid #ddd;
+  padding:25px;
+  margin:15px 0;
+  border-radius:6px;
+}
+.diagram-title{
+  background:var(--orange);
+  color:#fff;
+  padding:8px 16px;
+  font-weight:bold;
+  font-size:14px;
+  margin-bottom:20px;
+}
+.package-label{
+  font-weight:bold;
+  font-size:13px;
+  color:var(--dark);
+  margin:15px 0 8px;
+  padding:6px 12px;
+  background:#fff;
+  border:1px dashed #888;
+  display:inline-block;
+  border-radius:3px;
+}
+.classes-grid{
+  display:grid;
+  grid-template-columns:repeat(5, 1fr);
+  gap:20px 25px;
+}
+.classes-grid-3{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:20px 25px;
+}
+.classes-grid-2{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:25px 30px;
+}
+.uml-class{
+  background:#fff;
+  border:1.5px solid #333;
+  font-family:'Consolas', 'Courier New', monospace;
+  font-size:10.5px;
+  box-shadow:2px 2px 4px rgba(0,0,0,0.1);
+  display:flex;
+  flex-direction:column;
+}
+.uml-class .stereo{
+  text-align:center;
+  font-size:9px;
+  padding:3px 0 0;
+  color:#666;
+  font-style:italic;
+  font-family:'Segoe UI', Arial, sans-serif;
+}
+.uml-class .name{
+  text-align:center;
+  font-weight:bold;
+  font-size:12px;
+  padding:6px 8px 8px;
+  background:var(--orange);
+  color:#fff;
+  font-family:'Segoe UI', Arial, sans-serif;
+}
+.uml-class .name.iface{
+  background:#444;
+}
+.uml-class .name.facade{
+  background:#1971c2;
+}
+.uml-class .name.servlet{
+  background:#c92a2a;
+}
+.uml-class .name.util{
+  background:#7b1fa2;
+}
+.uml-class .section{
+  padding:6px 8px;
+  border-top:1px solid #333;
+  min-height:18px;
+  line-height:1.5;
+}
+.uml-class .section.empty{
+  min-height:6px;
+  padding:0;
+}
+.uml-class .member{
+  display:block;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.relaciones{
+  margin-top:25px;
+  background:#fffbe6;
+  border:1px solid #f0d000;
+  border-radius:4px;
+  padding:15px 20px;
+}
+.relaciones h3{
+  margin:0 0 10px 0;
+  color:#222;
+  font-size:13px;
+}
+.relaciones ul{
+  margin:0;
+  padding-left:20px;
+  font-size:12px;
+  line-height:1.7;
+}
+.relaciones code{
+  background:#fff;
+  padding:1px 6px;
+  border:1px solid #ddd;
+  border-radius:3px;
+  font-size:11px;
+}
+.leyenda{
+  background:#eef;
+  padding:15px;
+  margin:15px 0;
+  border-radius:4px;
+  font-size:12px;
+}
+.leyenda strong{color:var(--dark);}
+@media print{.help-banner{display:none;}}
+</style>
+</head>
+<body>
+
+<div class="help-banner">
+  <b>Cómo usar este archivo:</b> Abre en el navegador (doble clic).
+  Captura los <b>3 diagramas</b> con <code>Win + Shift + S</code> y pégalos en el Word
+  en la sección <b>3.1 Diagrama de Clases UML</b> uno tras otro.
+</div>
+
+<div class="leyenda">
+<strong>Leyenda UML:</strong>
+<code>+</code> público &nbsp;|&nbsp;
+<code>-</code> privado &nbsp;|&nbsp;
+<code>#</code> protegido &nbsp;|&nbsp;
+<code>&lt;&lt;interface&gt;&gt;</code> interfaz &nbsp;|&nbsp;
+naranja = clase concreta &nbsp;|&nbsp;
+gris = interfaz &nbsp;|&nbsp;
+azul = facade &nbsp;|&nbsp;
+rojo = servlet/controller &nbsp;|&nbsp;
+morado = utilitaria
+</div>
+
+<!-- ====================== DIAGRAMA 1: DTOs ====================== -->
+<h1>Diagrama 1/3 — Capa DTO (com.gymmax.dto)</h1>
+
+<div class="diagram-wrapper">
+<div class="diagram-title">10 clases POJO con sus atributos y métodos</div>
+
+<div class="classes-grid">
+
+  <div class="uml-class">
+    <div class="name">Usuario</div>
+    <div class="section">
+      <span class="member">- idUsuario : int</span>
+      <span class="member">- correo : String</span>
+      <span class="member">- password : String</span>
+      <span class="member">- nombres : String</span>
+      <span class="member">- apellidos : String</span>
+      <span class="member">- rol : String</span>
+      <span class="member">- creadoEn : LocalDateTime</span>
+    </div>
+    <div class="section">
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">Socio</div>
+    <div class="section">
+      <span class="member">- idSocio : int</span>
+      <span class="member">- idUsuario : int</span>
+      <span class="member">- dni : String</span>
+      <span class="member">- celular : String</span>
+      <span class="member">- fechaNac : LocalDate</span>
+      <span class="member">- genero : char</span>
+      <span class="member">- direccion : String</span>
+      <span class="member">- fechaReg : LocalDate</span>
+    </div>
+    <div class="section">
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">Plan</div>
+    <div class="section">
+      <span class="member">- idPlan : int</span>
+      <span class="member">- nombre : String</span>
+      <span class="member">- tipo : String</span>
+      <span class="member">- precio : double</span>
+      <span class="member">- duracionDias : int</span>
+      <span class="member">- activo : boolean</span>
+    </div>
+    <div class="section">
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">Membresia</div>
+    <div class="section">
+      <span class="member">- idMembresia : int</span>
+      <span class="member">- idSocio : int</span>
+      <span class="member">- idPlan : int</span>
+      <span class="member">- fechaInicio : LocalDate</span>
+      <span class="member">- fechaFin : LocalDate</span>
+      <span class="member">- estado : String</span>
+      <span class="member">- monto : double</span>
+      <span class="member">- renovacionAuto : boolean</span>
+    </div>
+    <div class="section">
+      <span class="member">+ isVigente() : boolean</span>
+      <span class="member">+ diasParaVencer() : int</span>
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">Pago</div>
+    <div class="section">
+      <span class="member">- idPago : int</span>
+      <span class="member">- idMembresia : int</span>
+      <span class="member">- metodo : String</span>
+      <span class="member">- monto : double</span>
+      <span class="member">- fechaPago : LocalDateTime</span>
+      <span class="member">- nroOperacion : String</span>
+      <span class="member">- estado : String</span>
+      <span class="member">- comprobanteUrl : String</span>
+    </div>
+    <div class="section">
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">Sede</div>
+    <div class="section">
+      <span class="member">- idSede : int</span>
+      <span class="member">- nombre : String</span>
+      <span class="member">- direccion : String</span>
+      <span class="member">- distrito : String</span>
+      <span class="member">- telefono : String</span>
+      <span class="member">- horaApertura : LocalTime</span>
+      <span class="member">- horaCierre : LocalTime</span>
+      <span class="member">- capacidad : int</span>
+    </div>
+    <div class="section">
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">Clase</div>
+    <div class="section">
+      <span class="member">- idClase : int</span>
+      <span class="member">- idSede : int</span>
+      <span class="member">- nombre : String</span>
+      <span class="member">- tipo : String</span>
+      <span class="member">- instructor : String</span>
+      <span class="member">- diaSemana : int</span>
+      <span class="member">- horaInicio : LocalTime</span>
+      <span class="member">- cupoMaximo : int</span>
+    </div>
+    <div class="section">
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">HorarioClase</div>
+    <div class="section">
+      <span class="member">- idHorario : int</span>
+      <span class="member">- idClase : int</span>
+      <span class="member">- fechaEspecifica : LocalDate</span>
+      <span class="member">- cupoActual : int</span>
+      <span class="member">- cupoDisponible : int</span>
+      <span class="member">- estado : String</span>
+    </div>
+    <div class="section">
+      <span class="member">+ hayCupo() : boolean</span>
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">Reserva</div>
+    <div class="section">
+      <span class="member">- idReserva : int</span>
+      <span class="member">- idSocio : int</span>
+      <span class="member">- idClase : int</span>
+      <span class="member">- fecha : LocalDate</span>
+      <span class="member">- hora : LocalTime</span>
+      <span class="member">- estado : String</span>
+      <span class="member">- creadoEn : LocalDateTime</span>
+      <span class="member">- canceladoEn : LocalDateTime</span>
+    </div>
+    <div class="section">
+      <span class="member">+ puedeCancelarse() : boolean</span>
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">Asistencia</div>
+    <div class="section">
+      <span class="member">- idAsistencia : int</span>
+      <span class="member">- idSocio : int</span>
+      <span class="member">- idSede : int</span>
+      <span class="member">- fechaHora : LocalDateTime</span>
+      <span class="member">- tipo : String</span>
+      <span class="member">- registradoPor : int</span>
+    </div>
+    <div class="section">
+      <span class="member">+ getters/setters</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="relaciones">
+  <h3>Asociaciones entre DTOs:</h3>
+  <ul>
+    <li><code>Socio 1 ── 1 Usuario</code></li>
+    <li><code>Membresia * ── 1 Socio</code> &nbsp;|&nbsp; <code>Membresia * ── 1 Plan</code></li>
+    <li><code>Pago * ── 1 Membresia</code></li>
+    <li><code>Clase * ── 1 Sede</code></li>
+    <li><code>HorarioClase * ── 1 Clase</code></li>
+    <li><code>Reserva * ── 1 Socio</code> &nbsp;|&nbsp; <code>Reserva * ── 1 Clase</code></li>
+    <li><code>Asistencia * ── 1 Socio</code> &nbsp;|&nbsp; <code>Asistencia * ── 1 Sede</code></li>
+  </ul>
+</div>
+
+</div>
+
+<!-- ====================== DIAGRAMA 2: DAOs ====================== -->
+<h1>Diagrama 2/3 — Capa DAO (com.gymmax.dao)</h1>
+
+<div class="diagram-wrapper">
+<div class="diagram-title">9 interfaces DAO + 9 implementaciones DAO (patrón DAO)</div>
+
+<div class="classes-grid-3">
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;interface&gt;&gt;</div>
+    <div class="name iface">IUsuarioDAO</div>
+    <div class="section empty"></div>
+    <div class="section">
+      <span class="member">+ listar() : List&lt;Usuario&gt;</span>
+      <span class="member">+ buscarPorId(id) : Usuario</span>
+      <span class="member">+ buscarPorCorreo(c) : Usuario</span>
+      <span class="member">+ registrar(u) : int</span>
+      <span class="member">+ actualizar(u) : boolean</span>
+      <span class="member">+ eliminar(id) : boolean</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">UsuarioDAOImpl</div>
+    <div class="section">
+      <span class="member">- conn : Connection</span>
+    </div>
+    <div class="section">
+      <span class="member">+ implementa todos los</span>
+      <span class="member">&nbsp;&nbsp;métodos de IUsuarioDAO</span>
+      <span class="member">&nbsp;&nbsp;usando JDBC</span>
+    </div>
+  </div>
+
+  <div></div>
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;interface&gt;&gt;</div>
+    <div class="name iface">ISocioDAO</div>
+    <div class="section empty"></div>
+    <div class="section">
+      <span class="member">+ listar() : List&lt;Socio&gt;</span>
+      <span class="member">+ buscarPorId(id) : Socio</span>
+      <span class="member">+ buscarPorDni(d) : Socio</span>
+      <span class="member">+ buscarPorUsuario(id):Socio</span>
+      <span class="member">+ registrar(s) : int</span>
+      <span class="member">+ actualizar(s) : boolean</span>
+      <span class="member">+ eliminar(id) : boolean</span>
+      <span class="member">+ filtrar(...) : List&lt;Socio&gt;</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">SocioDAOImpl</div>
+    <div class="section">
+      <span class="member">- conn : Connection</span>
+    </div>
+    <div class="section">
+      <span class="member">+ implementa ISocioDAO</span>
+      <span class="member">&nbsp;&nbsp;con JDBC</span>
+    </div>
+  </div>
+
+  <div></div>
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;interface&gt;&gt;</div>
+    <div class="name iface">IPlanDAO</div>
+    <div class="section empty"></div>
+    <div class="section">
+      <span class="member">+ listar() : List&lt;Plan&gt;</span>
+      <span class="member">+ listarActivos() : List&lt;Plan&gt;</span>
+      <span class="member">+ buscarPorId(id) : Plan</span>
+      <span class="member">+ registrar(p) : int</span>
+      <span class="member">+ actualizar(p) : boolean</span>
+      <span class="member">+ desactivar(id) : boolean</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">PlanDAOImpl</div>
+    <div class="section">
+      <span class="member">- conn : Connection</span>
+    </div>
+    <div class="section">
+      <span class="member">+ implementa IPlanDAO</span>
+    </div>
+  </div>
+
+  <div></div>
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;interface&gt;&gt;</div>
+    <div class="name iface">IMembresiaDAO</div>
+    <div class="section empty"></div>
+    <div class="section">
+      <span class="member">+ listarPorSocio(id):List</span>
+      <span class="member">+ buscarActivaPorSocio(id)</span>
+      <span class="member">+ registrar(m) : int</span>
+      <span class="member">+ renovar(id, dias) : boolean</span>
+      <span class="member">+ listarPorVencer(d):List</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">MembresiaDAOImpl</div>
+    <div class="section">
+      <span class="member">- conn : Connection</span>
+    </div>
+    <div class="section">
+      <span class="member">+ implementa IMembresiaDAO</span>
+    </div>
+  </div>
+
+  <div></div>
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;interface&gt;&gt;</div>
+    <div class="name iface">IPagoDAO</div>
+    <div class="section empty"></div>
+    <div class="section">
+      <span class="member">+ listarPorMembresia(id)</span>
+      <span class="member">+ listarPorSocio(id):List</span>
+      <span class="member">+ registrar(p) : int</span>
+      <span class="member">+ sumarIngresos(...):double</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">PagoDAOImpl</div>
+    <div class="section">
+      <span class="member">- conn : Connection</span>
+    </div>
+    <div class="section">
+      <span class="member">+ implementa IPagoDAO</span>
+    </div>
+  </div>
+
+  <div></div>
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;interface&gt;&gt;</div>
+    <div class="name iface">ISedeDAO</div>
+    <div class="section empty"></div>
+    <div class="section">
+      <span class="member">+ listar() : List&lt;Sede&gt;</span>
+      <span class="member">+ buscarPorId(id) : Sede</span>
+      <span class="member">+ filtrarPorDistrito(d):List</span>
+      <span class="member">+ registrar(s) : int</span>
+      <span class="member">+ actualizar(s) : boolean</span>
+      <span class="member">+ eliminar(id) : boolean</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">SedeDAOImpl</div>
+    <div class="section">
+      <span class="member">- conn : Connection</span>
+    </div>
+    <div class="section">
+      <span class="member">+ implementa ISedeDAO</span>
+    </div>
+  </div>
+
+  <div></div>
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;interface&gt;&gt;</div>
+    <div class="name iface">IClaseDAO</div>
+    <div class="section empty"></div>
+    <div class="section">
+      <span class="member">+ listar() : List&lt;Clase&gt;</span>
+      <span class="member">+ listarPorSede(id):List</span>
+      <span class="member">+ listarPorSedeFecha(...)</span>
+      <span class="member">+ buscarPorId(id) : Clase</span>
+      <span class="member">+ registrar(c) : int</span>
+      <span class="member">+ actualizar(c) : boolean</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">ClaseDAOImpl</div>
+    <div class="section">
+      <span class="member">- conn : Connection</span>
+    </div>
+    <div class="section">
+      <span class="member">+ implementa IClaseDAO</span>
+    </div>
+  </div>
+
+  <div></div>
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;interface&gt;&gt;</div>
+    <div class="name iface">IReservaDAO</div>
+    <div class="section empty"></div>
+    <div class="section">
+      <span class="member">+ listarPorSocio(id):List</span>
+      <span class="member">+ listarPorClase(id,fec)</span>
+      <span class="member">+ buscarPorId(id) : Reserva</span>
+      <span class="member">+ registrar(r) : int</span>
+      <span class="member">+ cancelar(id) : boolean</span>
+      <span class="member">+ existeReserva(...): bool</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">ReservaDAOImpl</div>
+    <div class="section">
+      <span class="member">- conn : Connection</span>
+    </div>
+    <div class="section">
+      <span class="member">+ implementa IReservaDAO</span>
+    </div>
+  </div>
+
+  <div></div>
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;interface&gt;&gt;</div>
+    <div class="name iface">IAsistenciaDAO</div>
+    <div class="section empty"></div>
+    <div class="section">
+      <span class="member">+ listarPorSocio(id):List</span>
+      <span class="member">+ registrar(a) : int</span>
+      <span class="member">+ contarPorSede(...):int</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name">AsistenciaDAOImpl</div>
+    <div class="section">
+      <span class="member">- conn : Connection</span>
+    </div>
+    <div class="section">
+      <span class="member">+ implementa IAsistenciaDAO</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="relaciones">
+  <h3>Relaciones UML:</h3>
+  <ul>
+    <li><code>*DAOImpl ----▷ I*DAO</code> &nbsp;(Realización / implements — línea punteada con triángulo hueco)</li>
+    <li>Cada <code>*DAOImpl</code> usa la clase <code>Conexion</code> para abrir conexiones JDBC (dependencia)</li>
+    <li>Cada DAO trabaja con su DTO correspondiente (ej. <code>IUsuarioDAO</code> ↔ <code>Usuario</code>)</li>
+  </ul>
+</div>
+
+</div>
+
+<!-- ====================== DIAGRAMA 3: FACADES + CONTROLLERS + UTIL ====================== -->
+<h1>Diagrama 3/3 — Facades + Controllers + Utilitaria</h1>
+
+<div class="diagram-wrapper">
+<div class="diagram-title">5 Facades + 5 Servlets + clase Conexion</div>
+
+<div class="package-label">com.gymmax.facade</div>
+<div class="classes-grid-3">
+
+  <div class="uml-class">
+    <div class="name facade">AuthFacade</div>
+    <div class="section">
+      <span class="member">- usuarioDAO : IUsuarioDAO</span>
+      <span class="member">- socioDAO : ISocioDAO</span>
+    </div>
+    <div class="section">
+      <span class="member">+ login(correo, pwd) : Usuario</span>
+      <span class="member">+ registrarSocio(s, pwd) : bool</span>
+      <span class="member">+ recuperarPassword(c) : bool</span>
+      <span class="member">+ cambiarPassword(id,n) : bool</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name facade">SocioFacade</div>
+    <div class="section">
+      <span class="member">- sedeDAO : ISedeDAO</span>
+      <span class="member">- claseDAO : IClaseDAO</span>
+      <span class="member">- membresiaDAO : IMembresiaDAO</span>
+    </div>
+    <div class="section">
+      <span class="member">+ obtenerDashboard(id)</span>
+      <span class="member">+ listarSedes() : List&lt;Sede&gt;</span>
+      <span class="member">+ listarSedesPorDistrito(d)</span>
+      <span class="member">+ listarClasesPorSedeFecha(...)</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name facade">ReservaFacade</div>
+    <div class="section">
+      <span class="member">- reservaDAO : IReservaDAO</span>
+      <span class="member">- claseDAO : IClaseDAO</span>
+      <span class="member">- membresiaDAO : IMembresiaDAO</span>
+    </div>
+    <div class="section">
+      <span class="member">+ reservar(idS,idC,fec,h):bool</span>
+      <span class="member">+ cancelar(idR) : boolean</span>
+      <span class="member">+ listarMisReservas(id,f):List</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name facade">MembresiaFacade</div>
+    <div class="section">
+      <span class="member">- membresiaDAO : IMembresiaDAO</span>
+      <span class="member">- planDAO : IPlanDAO</span>
+      <span class="member">- pagoDAO : IPagoDAO</span>
+    </div>
+    <div class="section">
+      <span class="member">+ contratar(idS,idP,met):bool</span>
+      <span class="member">+ renovar(idM) : boolean</span>
+      <span class="member">+ listarHistorialPagos(id):List</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="name facade">AdminFacade</div>
+    <div class="section">
+      <span class="member">- socioDAO, sedeDAO,</span>
+      <span class="member">&nbsp;&nbsp;planDAO, membresiaDAO,</span>
+      <span class="member">&nbsp;&nbsp;pagoDAO, asistenciaDAO</span>
+    </div>
+    <div class="section">
+      <span class="member">+ obtenerDashboardAdmin()</span>
+      <span class="member">+ generarReporteIngresos(...)</span>
+      <span class="member">+ exportarExcel(r) : byte[]</span>
+      <span class="member">+ exportarPDF(r) : byte[]</span>
+    </div>
+  </div>
+
+  <div></div>
+
+</div>
+
+<div class="package-label" style="margin-top:25px;">com.gymmax.controller (Servlets)</div>
+<div class="classes-grid-3">
+
+  <div class="uml-class">
+    <div class="stereo">@WebServlet("/AuthServlet")</div>
+    <div class="name servlet">AuthServlet</div>
+    <div class="section">
+      <span class="member">- facade : AuthFacade</span>
+    </div>
+    <div class="section">
+      <span class="member">+ doGet(req, resp)</span>
+      <span class="member">+ doPost(req, resp)</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="stereo">@WebServlet("/SocioServlet")</div>
+    <div class="name servlet">SocioServlet</div>
+    <div class="section">
+      <span class="member">- facade : SocioFacade</span>
+    </div>
+    <div class="section">
+      <span class="member">+ doGet(req, resp)</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="stereo">@WebServlet("/ReservaServlet")</div>
+    <div class="name servlet">ReservaServlet</div>
+    <div class="section">
+      <span class="member">- facade : ReservaFacade</span>
+    </div>
+    <div class="section">
+      <span class="member">+ doGet(req, resp)</span>
+      <span class="member">+ doPost(req, resp)</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="stereo">@WebServlet("/MembresiaServlet")</div>
+    <div class="name servlet">MembresiaServlet</div>
+    <div class="section">
+      <span class="member">- facade : MembresiaFacade</span>
+    </div>
+    <div class="section">
+      <span class="member">+ doGet(req, resp)</span>
+      <span class="member">+ doPost(req, resp)</span>
+    </div>
+  </div>
+
+  <div class="uml-class">
+    <div class="stereo">@WebServlet("/AdminServlet")</div>
+    <div class="name servlet">AdminServlet</div>
+    <div class="section">
+      <span class="member">- facade : AdminFacade</span>
+    </div>
+    <div class="section">
+      <span class="member">+ doGet(req, resp)</span>
+      <span class="member">+ doPost(req, resp)</span>
+    </div>
+  </div>
+
+  <div></div>
+
+</div>
+
+<div class="package-label" style="margin-top:25px;">com.gymmax (utilitaria)</div>
+<div class="classes-grid-3">
+
+  <div class="uml-class">
+    <div class="stereo">&lt;&lt;singleton&gt;&gt;</div>
+    <div class="name util">Conexion</div>
+    <div class="section">
+      <span class="member">- URL : String</span>
+      <span class="member">- USER : String</span>
+      <span class="member">- PASSWORD : String</span>
+    </div>
+    <div class="section">
+      <span class="member">+ getConnection() : Connection</span>
+      <span class="member">+ cerrar(c : Connection) : void</span>
+    </div>
+  </div>
+
+</div>
+
+<div class="relaciones">
+  <h3>Relaciones UML del Diagrama 3:</h3>
+  <ul>
+    <li><code>Facade ────▷ I*DAO</code> &nbsp;(composición — el Facade contiene DAOs como atributo)</li>
+    <li><code>Servlet ────▷ Facade</code> &nbsp;(composición — el Servlet contiene un Facade)</li>
+    <li><code>*DAOImpl ────▷ Conexion</code> &nbsp;(dependencia — usa <code>getConnection()</code>)</li>
+    <li>Flujo MVC: <code>JSP → Servlet → Facade → DAO → MySQL</code></li>
+  </ul>
+</div>
+
+</div>
+
+<div class="leyenda" style="margin-top:30px;">
+  <strong>Resumen del diagrama completo:</strong> 10 DTOs + 9 interfaces DAO + 9 implementaciones DAO + 5 Facades + 5 Servlets + 1 Conexion = <strong>39 clases en total</strong>, organizadas en 5 paquetes bajo <code>com.gymmax</code>.
+</div>
+
+</body>
+</html>
