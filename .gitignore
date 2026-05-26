@@ -1,3 +1,10 @@
+# ========= Documentación local (no se sube al repo) =========
+Avance02/
+Avance 01.docx
+GymMax_Mockups.html
+PPT Avance 1.pdf
+Presentación de Avance 02.pdf
+
 # ========= Java =========
 *.class
 *.jar
@@ -36,7 +43,7 @@ nbdist/
 .vscode/
 *.swp
 
-# ========= Python (script generador) =========
+# ========= Python (script generador local) =========
 __pycache__/
 *.py[cod]
 *.pyo
@@ -49,13 +56,13 @@ desktop.ini
 .DS_Store
 ehthumbs.db
 
-# ========= Word / Office locks (lock temporal cuando alguien edita) =========
+# ========= Word/Office locks =========
 ~$*.docx
 ~$*.pptx
 ~$*.xlsx
 ~WRL*.tmp
 
-# ========= Logs y archivos temporales =========
+# ========= Logs =========
 *.log
 *.tmp
 *.bak
